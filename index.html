@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        audio, canvas {
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #ccc;
+        }
+
+        canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin: -128px -256px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="visualization" width="512" height="256"></canvas >
+    <audio src="./test.mp3" id="audio" />
+
+    <script>
+    console.log(document.getElementById('visualization'));
+        const canvas = document.getElementById('visualization');
+        const ctx = canvas.getContext('2d');
+        //ctx.translate(0, 256);
+
+        const ac = new AudioContext();
+        const analyser = ac.createAnalyser();
+
+        const audio = document.getElementById('audio');
+        const source = ac.createMediaElementSource(audio);
+        source.connect(analyser);
+        source.connect(ac.destination);
+
+        let frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
+        function renderFrame() {
+            requestAnimationFrame(renderFrame);
+            analyser.getByteFrequencyData(frequencyData);
+            if (frequencyData.reduce((prev, next) => {
+                return prev + next;
+            }, 0) === 0) {
+                return;
+            }
+
+            ctx.clearRect(0, 0, 1024, 256)
+            frequencyData.forEach((value, index) => {
+                let red = 255 - value;
+                let green = value;
+                let blue = 0;
+
+                ctx.beginPath();
+                ctx.strokeStyle = `rgb(${red}, ${green}, ${blue})`;
+                ctx.moveTo(index, 256);
+                ctx.lineTo(index, 256 - value);
+                ctx.stroke();
+                ctx.closePath();
+            });
+        }
+
+        audio.play();
+        renderFrame();
+    </script>
+</body>
+</html>
